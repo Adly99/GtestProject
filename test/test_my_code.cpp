@@ -1,6 +1,6 @@
 // test/test_my_code.cpp
 #include <gtest/gtest.h>
-#include "my_code.h"
+#include "my_code.hpp"
 
 // Test for the add function
 TEST(MyCodeTest, AddTest) {

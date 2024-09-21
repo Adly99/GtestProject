@@ -1,9 +1,10 @@
+# Minimum required CMake version
 cmake_minimum_required(VERSION 3.28.3)
 
-# Project name and version
+# Define project name and version
 project(GtestProject VERSION 1.0 LANGUAGES CXX)
 
-# Set the C++ standard
+# Set C++ standard to 17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS FALSE)  # Avoid compiler-specific extensions
@@ -13,16 +14,49 @@ message(STATUS "Configuring GtestProject version ${PROJECT_VERSION} with C++17."
 # Enable testing
 enable_testing()
 
-# Include directories (assuming headers are in include/)
-include_directories(include)
+# Option to select test file (add more test files as needed)
+set(TEST_FILE "test_calculator" CACHE STRING "Select the test file to build")
+
+
+# Include directories for the project
+include_directories(
+  if(TEST_FILE STREQUAL "test_calculator")
+    ${CMAKE_SOURCE_DIR}/src/calculator/
+  elseif(TEST_FILE STREQUAL "test_my_code")  
+    ${CMAKE_SOURCE_DIR}/src/testproject/
+  else()
+    message(FATAL_ERROR "Unknown header file.")
+  endif()    
+)
+
 
 # Automatically gather all source files from src directory
-file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp)
-message(STATUS "Found source files: ${PROJECT_SOURCES}")
+file(GLOB_RECURSE PROJECT_SOURCES 
+  if(TEST_FILE STREQUAL "test_calculator")
+    set(PROJECT_SOURCES ${CMAKE_SOURCE_DIR}/src/calculator/Calculator.cpp)
+  elseif(TEST_FILE STREQUAL "test_my_code")
+    set(PROJECT_SOURCES ${CMAKE_SOURCE_DIR}/src/testproject/my_code.cpp)
+  else()
+    message(FATAL_ERROR "Unknown source file: ${PROJECT_SOURCES}")
+  endif()
+)
+message(STATUS "Found project source files: ${PROJECT_SOURCES}")
 
-# Automatically gather all test files from test directory
-file(GLOB_RECURSE TEST_SOURCES test/*.cpp)
-message(STATUS "Found test files: ${TEST_SOURCES}")
+
+
+
+# Map the selected test file to the actual file path and output binary name
+if(TEST_FILE STREQUAL "test_calculator")
+  set(TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/test_calculator.cpp)
+  set(EXECUTABLE_NAME "calculator_test")
+  message(STATUS "Selected test: test_calculator.cpp")
+elseif(TEST_FILE STREQUAL "test_my_code")
+  set(TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/test_my_code.cpp)
+  set(EXECUTABLE_NAME "my_code_test")
+  message(STATUS "Selected test: test_my_code.cpp")
+else()
+  message(FATAL_ERROR "Unknown test file: ${TEST_FILE}")
+endif()
 
 # Include FetchContent module to download and configure dependencies
 include(FetchContent)
@@ -39,27 +73,36 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 message(STATUS "GoogleTest successfully fetched and made available.")
 
-# Add the executable for the tests
-add_executable(my_test ${PROJECT_SOURCES} ${TEST_SOURCES})
-message(STATUS "Creating executable for tests: my_test")
+# Define the test executable with a dynamic name
+add_executable(${EXECUTABLE_NAME}
+  ${PROJECT_SOURCES}
+  ${TEST_SOURCES}
+)
+message(STATUS "Created test executable: ${EXECUTABLE_NAME}")
 
 # Link the GoogleTest libraries
-target_link_libraries(my_test gtest gtest_main)
-message(STATUS "Linked GoogleTest libraries to my_test.")
+target_link_libraries(${EXECUTABLE_NAME} gtest gtest_main)
+message(STATUS "Linked GoogleTest libraries to ${EXECUTABLE_NAME}.")
 
 # Register tests with ctest
 include(GoogleTest)
-gtest_discover_tests(my_test)
-message(STATUS "Registered tests with CTest.")
+gtest_discover_tests(${EXECUTABLE_NAME})
+message(STATUS "Tests successfully registered with CTest.")
 
 # Optionally add test manually if needed
-add_test(NAME MyCodeTest COMMAND my_test)
+add_test(NAME ${EXECUTABLE_NAME} COMMAND ${EXECUTABLE_NAME})
 
 # Set output directories for built binaries
-set_target_properties(my_test PROPERTIES
+set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
 )
 message(STATUS "Set output directories for built binaries.")
+
+# rm -rf build/* && cmake -S . -B build && cmake --build build -j
+# rm -rf build/* && cmake -S . -B build -DTEST_FILE=test_calculator && cmake --build build -j
+# rm -rf build/* && cmake -S . -B build -DTEST_FILE=test_my_code && cmake --build build -j
+# ./your_test_executable --gtest_verbose=1
+
 
