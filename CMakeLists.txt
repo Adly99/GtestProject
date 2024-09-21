@@ -100,9 +100,5 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 )
 message(STATUS "Set output directories for built binaries.")
 
-# rm -rf build/* && cmake -S . -B build && cmake --build build -j
-# rm -rf build/* && cmake -S . -B build -DTEST_FILE=test_calculator && cmake --build build -j
-# rm -rf build/* && cmake -S . -B build -DTEST_FILE=test_my_code && cmake --build build -j
-# ./your_test_executable --gtest_verbose=1
 
 
