@@ -1,104 +1,71 @@
-# Minimum required CMake version
+# @file CMakeLists.txt
+# @brief CMake configuration file for the Calculator project
+#
+# This file sets up the build configuration for the Calculator project,
+# including the necessary paths for Google Test and Google Mock libraries.
+# It defines the project name, version, C++ standard, and sources for the
+# main application and tests. The configuration also registers tests with 
+# CTest for automated testing.
+#
+# @author Abdelrahman Elgharabawy
+# @date 2024-09-27
+#
+# @usage
+# To build the project, navigate to the build directory and run:
+#   cmake .. 
+#   make
+#   or...
+#   rm -rf build/* && cmake -S . -B build && cmake --build build -j
+# Ensure that the Google Test and Google Mock libraries are properly 
+# linked and the paths are correctly set in the CMake configuration.
+#
+# The compiled executable will be located in the bin directory within 
+# the build folder.
+
 cmake_minimum_required(VERSION 3.28.3)
 
 # Define project name and version
-project(GtestProject VERSION 1.0 LANGUAGES CXX)
+project(Calculator VERSION 1.0 LANGUAGES CXX)
 
-# Set C++ standard to 17
+# Set C++ standard to C++17
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_EXTENSIONS FALSE)  # Avoid compiler-specific extensions
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)  #void compiler-specific extensions
 
-message(STATUS "Configuring GtestProject version ${PROJECT_VERSION} with C++17.")
-
-# Enable testing
 enable_testing()
 
-# Option to select test file (add more test files as needed)
-set(TEST_FILE "test_calculator" CACHE STRING "Select the test file to build")
-
-
-# Include directories for the project
+# Include directories for GoogleTest and project sources
 include_directories(
-  if(TEST_FILE STREQUAL "test_calculator")
-    ${CMAKE_SOURCE_DIR}/src/calculator/
-  elseif(TEST_FILE STREQUAL "test_my_code")  
-    ${CMAKE_SOURCE_DIR}/src/testproject/
-  else()
-    message(FATAL_ERROR "Unknown header file.")
-  endif()    
+  ${CMAKE_SOURCE_DIR}/src/calculator/
+  ${CMAKE_SOURCE_DIR}/test/gtest/googletest/include
+  # ${CMAKE_SOURCE_DIR}/test/gtest/googlemock/include  # if you need to use mocking
 )
 
-
-# Automatically gather all source files from src directory
-file(GLOB_RECURSE PROJECT_SOURCES 
-  if(TEST_FILE STREQUAL "test_calculator")
-    set(PROJECT_SOURCES ${CMAKE_SOURCE_DIR}/src/calculator/Calculator.cpp)
-  elseif(TEST_FILE STREQUAL "test_my_code")
-    set(PROJECT_SOURCES ${CMAKE_SOURCE_DIR}/src/testproject/my_code.cpp)
-  else()
-    message(FATAL_ERROR "Unknown source file: ${PROJECT_SOURCES}")
-  endif()
-)
-message(STATUS "Found project source files: ${PROJECT_SOURCES}")
-
-
-
-
-# Map the selected test file to the actual file path and output binary name
-if(TEST_FILE STREQUAL "test_calculator")
-  set(TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/test_calculator.cpp)
-  set(EXECUTABLE_NAME "calculator_test")
-  message(STATUS "Selected test: test_calculator.cpp")
-elseif(TEST_FILE STREQUAL "test_my_code")
-  set(TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/test_my_code.cpp)
-  set(EXECUTABLE_NAME "my_code_test")
-  message(STATUS "Selected test: test_my_code.cpp")
-else()
-  message(FATAL_ERROR "Unknown test file: ${TEST_FILE}")
-endif()
-
-# Include FetchContent module to download and configure dependencies
-include(FetchContent)
-
-# Fetch GoogleTest with the latest stable release (v1.15.2)
-message(STATUS "Fetching GoogleTest...")
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip  # Latest stable release (v1.15.2)
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE  # Ensure reproducible builds
+set(PROJECT_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/calculator/Calculator.cpp
+    # Add more source files here as needed
 )
 
-# Make GoogleTest available for the project
-FetchContent_MakeAvailable(googletest)
-message(STATUS "GoogleTest successfully fetched and made available.")
-
-# Define the test executable with a dynamic name
-add_executable(${EXECUTABLE_NAME}
-  ${PROJECT_SOURCES}
-  ${TEST_SOURCES}
+set(TEST_SOURCES
+    ${CMAKE_SOURCE_DIR}/test/test_calculator.cpp
+    # Add more test files here as needed
 )
-message(STATUS "Created test executable: ${EXECUTABLE_NAME}")
 
-# Link the GoogleTest libraries
-target_link_libraries(${EXECUTABLE_NAME} gtest gtest_main)
-message(STATUS "Linked GoogleTest libraries to ${EXECUTABLE_NAME}.")
+# Create an executable for the project
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${TEST_SOURCES})
 
-# Register tests with ctest
+# Register tests with CTest
 include(GoogleTest)
-gtest_discover_tests(${EXECUTABLE_NAME})
-message(STATUS "Tests successfully registered with CTest.")
+gtest_discover_tests(${PROJECT_NAME})
 
-# Optionally add test manually if needed
-add_test(NAME ${EXECUTABLE_NAME} COMMAND ${EXECUTABLE_NAME})
-
-# Set output directories for built binaries
-set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/test/gtest/lib/libgtest.a 
+        ${CMAKE_SOURCE_DIR}/test/gtest/lib/libgtest_main.a 
+        ${CMAKE_SOURCE_DIR}/test/gtest/lib/libgmock.a 
+        ${CMAKE_SOURCE_DIR}/test/gtest/lib/libgmock_main.a 
 )
-message(STATUS "Set output directories for built binaries.")
 
-
-
+# Set output directory for executables
+set_target_properties(${PROJECT_NAME} PROPERTIES 
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
